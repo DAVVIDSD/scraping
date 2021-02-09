@@ -1,6 +1,8 @@
 const puppeteer = require("puppeteer");
 const xlsx = require("xlsx");
 const inquirer = require("inquirer");
+const Downloader = require("./donwloader");
+
 (() => {
   //input
   inquirer
@@ -47,16 +49,35 @@ const inquirer = require("inquirer");
           const link = document.querySelector(".ui-pdp-image ").src;
           const replaces = link.replace("Q", "NQ");
           const newLink = replaces.replace("R", "O");
-          tmp.img = newLink;
+          const img = newLink.replace("webp", "jpg");
+          tmp.img = img;
           return tmp;
         });
         finishData.push(data);
       }
-      // Transformar a documento
-      const wb = xlsx.utils.book_new();
-      const ws = xlsx.utils.json_to_sheet(finishData);
-      xlsx.utils.book_append_sheet(wb, ws);
-      xlsx.writeFile(wb, "data-mercadolibre.xlsx");
+      inquirer
+        .prompt({
+          name: "route",
+          message: "Escriba la donde se guardaran las imagenes",
+        })
+        .then((value) => {
+          for (values of finishData) {
+            Downloader.download(values.img, value.route);
+          }
+          console.log('Imagenes guardadas con exito')
+          inquirer
+            .prompt({
+              name: "routeFile",
+              message: "Escriba la ruta de su archivo",
+            })
+            .then((value) => {
+              const wb = xlsx.utils.book_new();
+              const ws = xlsx.utils.json_to_sheet(finishData);
+              xlsx.utils.book_append_sheet(wb, ws);
+              xlsx.writeFile(wb, `${value.routeFile}.xlsx`);
+              console.log('Archivo guardado con exito')
+            });
+        });
       await browser.close();
     });
 })();
